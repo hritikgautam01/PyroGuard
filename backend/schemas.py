@@ -30,6 +30,8 @@ class DetectionItem(BaseModel):
     longitude: float
     type: int
     type_name: str
+
+    # Original FIRMS telemetry
     bright_ti4: float
     bright_ti5: float
     frp: float
@@ -37,6 +39,25 @@ class DetectionItem(BaseModel):
     acq_date: str
     daynight: str
 
+    # Engineered features used by XGBoost
+    temp_diff: float
+    temp_ratio: float
+    frp_log: float
+    intensity_score: float
+    confidence_numeric: float
+
+    # Temporal features
+    day_of_year: int
+    month: int
+    week: int
+    quarter: int
+    day_of_week: int
+    hour: int
+    is_night: int
+
+    # Detection history
+    detection_count: int
+    
 class DetectionsResponse(BaseModel):
     total: int
     count: int

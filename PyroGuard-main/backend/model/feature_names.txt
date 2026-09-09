@@ -1,1 +1,0 @@
-bright_ti4,bright_ti5,temp_diff,temp_ratio,frp,frp_log,intensity_score,day_of_year,month,week,quarter,day_of_week,hour,is_night,detection_count,confidence_numeric

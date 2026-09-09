@@ -50,44 +50,204 @@ def get_detections(
     limit: int = 2000,
     offset: int = 0
 ) -> Dict[str, Any]:
+
     df = load_dataset()
 
+    # Start with the complete dataset
     filtered = df
 
-    if types:
-        filtered = filtered[filtered["type"].isin(types)]
+    # =========================================================
+    # TYPE FILTER
+    # =========================================================
+    #
+    # Important:
+    #   types = None  -> no type filter
+    #   types = []    -> explicitly selected NO types
+    #   types = [0,2] -> show only type 0 and type 2
+    #
+    if types is not None:
+
+        if len(types) == 0:
+            # No fire-source classes selected.
+            # Therefore return ZERO detections.
+            filtered = filtered.iloc[0:0]
+
+        else:
+            filtered = filtered[
+                filtered["type"].isin(types)
+            ]
+
+    # =========================================================
+    # MONTH FILTER
+    # =========================================================
 
     if month is not None and month > 0:
-        filtered = filtered[filtered["month"] == month]
+        filtered = filtered[
+            filtered["month"] == month
+        ]
+
+    # =========================================================
+    # DAY / NIGHT FILTER
+    # =========================================================
 
     if daynight and daynight in ["D", "N"]:
+
         if "daynight" in filtered.columns:
-            filtered = filtered[filtered["daynight"] == daynight]
+            filtered = filtered[
+                filtered["daynight"] == daynight
+            ]
+
+    # =========================================================
+    # CONFIDENCE FILTER
+    # =========================================================
 
     if min_confidence is not None:
+
         if "confidence_numeric" in filtered.columns:
-            filtered = filtered[filtered["confidence_numeric"] >= min_confidence]
+            filtered = filtered[
+                filtered["confidence_numeric"] >= min_confidence
+            ]
+
+    # =========================================================
+    # TOTAL MATCHING RECORDS
+    # =========================================================
 
     total_matching = len(filtered)
 
-    # Slice offset and limit
-    sliced = filtered.iloc[offset : offset + limit]
+    # =========================================================
+    # PAGINATION
+    # =========================================================
+
+    sliced = filtered.iloc[
+        offset : offset + limit
+    ]
+
+    # =========================================================
+    # CONVERT DATASET ROWS TO API RESPONSE
+    # =========================================================
 
     results = []
+
     for _, row in sliced.iterrows():
+
         t_val = int(row.get("type", 0))
+
         results.append({
-            "latitude": float(row.get("latitude", 0.0)),
-            "longitude": float(row.get("longitude", 0.0)),
+
+            # ---------------------------------------------
+            # Original FIRMS fields
+            # ---------------------------------------------
+
+            "latitude": float(
+                row.get("latitude", 0.0)
+            ),
+
+            "longitude": float(
+                row.get("longitude", 0.0)
+            ),
+
             "type": t_val,
-            "type_name": CLASS_NAME_MAP.get(t_val, f"Type {t_val}"),
-            "bright_ti4": round(float(row.get("bright_ti4", 0.0)), 2),
-            "bright_ti5": round(float(row.get("bright_ti5", 0.0)), 2),
-            "frp": round(float(row.get("frp", 0.0)), 2),
-            "confidence": str(row.get("confidence", "n")),
-            "acq_date": str(row.get("acq_date", "2024-01-01")),
-            "daynight": str(row.get("daynight", "D"))
+
+            "type_name": CLASS_NAME_MAP.get(
+                t_val,
+                f"Type {t_val}"
+            ),
+
+            "bright_ti4": round(
+                float(row.get("bright_ti4", 0.0)),
+                2
+            ),
+
+            "bright_ti5": round(
+                float(row.get("bright_ti5", 0.0)),
+                2
+            ),
+
+            "frp": round(
+                float(row.get("frp", 0.0)),
+                2
+            ),
+
+            "confidence": str(
+                row.get("confidence", "n")
+            ),
+
+            "acq_date": str(
+                row.get("acq_date", "2024-01-01")
+            ),
+
+            "daynight": str(
+                row.get("daynight", "D")
+            ),
+
+            # ---------------------------------------------
+            # XGBoost engineered features
+            # ---------------------------------------------
+
+            "temp_diff": float(
+                row.get("temp_diff", 0.0)
+            ),
+
+            "temp_ratio": float(
+                row.get("temp_ratio", 0.0)
+            ),
+
+            "frp_log": float(
+                row.get("frp_log", 0.0)
+            ),
+
+            "intensity_score": float(
+                row.get("intensity_score", 0.0)
+            ),
+
+            "confidence_numeric": float(
+                row.get("confidence_numeric", 0.0)
+            ),
+
+            # ---------------------------------------------
+            # Temporal features
+            # ---------------------------------------------
+
+            "day_of_year": int(
+                row.get("day_of_year", 1)
+            ),
+
+            "month": int(
+                row.get("month", 1)
+            ),
+
+            "week": int(
+                row.get("week", 1)
+            ),
+
+            "quarter": int(
+                row.get("quarter", 1)
+            ),
+
+            "day_of_week": int(
+                row.get("day_of_week", 0)
+            ),
+
+            "hour": int(
+                row.get("hour", 0)
+            ),
+
+            "is_night": int(
+                row.get("is_night", 0)
+            ),
+
+            # ---------------------------------------------
+            # Detection history
+            # ---------------------------------------------
+
+            "detection_count": int(
+                row.get("detection_count", 1)
+            )
         })
+
+    # =========================================================
+    # API RESPONSE
+    # =========================================================
 
     return {
         "total": total_matching,
@@ -95,12 +255,14 @@ def get_detections(
         "results": results
     }
 
-
 def get_summary_stats() -> Dict[str, Any]:
     df = load_dataset()
 
-    total_count = len(df)
+    # Only count heat-source classes supported by PyroGuard
+    supported_types = [0, 2, 3]
+    df = df[df["type"].isin(supported_types)].copy()
 
+    total_count = len(df)
     # By type breakdown
     by_type = {}
     if "type" in df.columns:
