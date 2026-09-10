@@ -35,16 +35,8 @@ origins = [
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "https://pyroguard-2.onrender.com",
-    frontend_origin
+    frontend_origin,
 ]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 app.add_middleware(
     CORSMiddleware,
