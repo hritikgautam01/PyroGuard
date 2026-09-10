@@ -34,7 +34,8 @@ export default function Sidebar({
   onReset,
   totalCount,
   currentCount,
-  isLoading
+  isLoading,
+  streamMode = 'archive'
 }) {
 
   /* =========================================================
@@ -75,7 +76,7 @@ export default function Sidebar({
     <aside className="w-full lg:w-72 glass-panel p-5 rounded-2xl border border-slate-800 space-y-6 flex-shrink-0">
 
       {/* =====================================================
-          TITLE
+          TITLE & STREAM STATUS BADGE
       ===================================================== */}
 
       <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
@@ -85,7 +86,7 @@ export default function Sidebar({
           <Filter className="w-4 h-4 text-amber-400" />
 
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-            Telemetry Filters
+            {streamMode === 'live' ? '⚡ Live Controls' : '📅 Archive Filters'}
           </h2>
 
         </div>
@@ -107,243 +108,151 @@ export default function Sidebar({
 
 
       {/* =====================================================
-          DATASET COUNT
+          DATASET COUNT & STREAM INDICATOR
       ===================================================== */}
 
       <div className="bg-slate-900/90 rounded-xl p-3 border border-slate-800 text-xs">
+        <div className="flex items-center justify-between">
+          <div className="text-slate-400 font-medium flex items-center space-x-1.5">
+            {streamMode === 'live' ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                <span className="text-rose-400 font-bold">Real-Time FIRMS Feed</span>
+              </>
+            ) : (
+              <span>Filtered Heat Points</span>
+            )}
+          </div>
 
-        <div className="text-slate-400 font-medium">
-          Mapped Heat Points
+          <div className="text-[10px] text-slate-500">
+            Limit: {filters.limit || 2000}
+          </div>
         </div>
 
-        {/* Filtered heat-point count */}
-<div className="bg-slate-900/90 rounded-xl p-3 border border-slate-800 text-xs">
-  <div className="flex items-center justify-between">
-    <div className="text-slate-400 font-medium">
-      Filtered Heat Points
-    </div>
-
-    <div className="text-[10px] text-slate-500">
-      Limit: {filters.limit || 2000}
-    </div>
-  </div>
-
-  <div className="text-2xl font-black text-amber-400 mt-1">
-    {isLoading ? (
-      <span className="animate-pulse text-sm">
-        Loading...
-      </span>
-    ) : (
-      totalCount.toLocaleString()
-    )}
-  </div>
-
-  {!isLoading && (
-    <div className="mt-1 text-[10px] text-slate-400">
-      Showing{' '}
-      <span className="text-slate-200 font-semibold">
-        {currentCount.toLocaleString()}
-      </span>{' '}
-      of{' '}
-      <span className="text-slate-200 font-semibold">
-        {totalCount.toLocaleString()}
-      </span>{' '}
-      matching detections
-    </div>
-  )}
-
-  {!isLoading && currentCount < totalCount && (
-    <div className="mt-2 text-[10px] text-amber-400">
-      ⚠ Display capped at {filters.limit || 2000} markers
-    </div>
-  )}
-
-  {!isLoading && currentCount === totalCount && totalCount > 0 && (
-    <div className="mt-2 text-[10px] text-emerald-400">
-      ✓ All matching points displayed
-    </div>
-  )}
-
-  {!isLoading && totalCount === 0 && (
-    <div className="mt-2 text-[10px] text-rose-400">
-      No detections match the selected filters
-    </div>
-  )}
-</div>
-      </div>
-
-
-      {/* =====================================================
-          THERMAL SOURCE TYPE
-      ===================================================== */}
-
-      <div className="space-y-3">
-
-        <label className="text-xs font-semibold text-slate-300 tracking-wide uppercase flex items-center justify-between">
-
-          <span>
-            Heat Source Class
-          </span>
-
-        </label>
-
-
-        <div className="space-y-2">
-
-          {/* -------------------------------------------------
-              WILDFIRE
-          ------------------------------------------------- */}
-
-          <button
-            type="button"
-            onClick={() => toggleType(0)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
-              (filters.types || []).includes(0)
-                ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300 shadow-sm shadow-emerald-900/30'
-                : 'bg-slate-900/40 border-slate-800/60 text-slate-400 hover:border-slate-700'
-            }`}
-          >
-
-            <div className="flex items-center space-x-2.5">
-
-              <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-400"></span>
-
-              <Flame className="w-4 h-4 text-emerald-400" />
-
-              <span>
-                Wildfire / Vegetation
-              </span>
-
-            </div>
-
-            <input
-              type="checkbox"
-              checked={(filters.types || []).includes(0)}
-              onChange={() => {}}
-              className="rounded accent-emerald-500"
-            />
-
-          </button>
-
-
-          {/* -------------------------------------------------
-              INDUSTRIAL
-          ------------------------------------------------- */}
-
-          <button
-            type="button"
-            onClick={() => toggleType(2)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
-              (filters.types || []).includes(2)
-                ? 'bg-amber-950/40 border-amber-500/50 text-amber-300 shadow-sm shadow-amber-900/30'
-                : 'bg-slate-900/40 border-slate-800/60 text-slate-400 hover:border-slate-700'
-            }`}
-          >
-
-            <div className="flex items-center space-x-2.5">
-
-              <span className="w-3 h-3 rounded-full bg-amber-500 shadow-sm shadow-amber-400"></span>
-
-              <Factory className="w-4 h-4 text-amber-400" />
-
-              <span>
-                Industrial Heat Source
-              </span>
-
-            </div>
-
-            <input
-              type="checkbox"
-              checked={(filters.types || []).includes(2)}
-              onChange={() => {}}
-              className="rounded accent-amber-500"
-            />
-
-          </button>
-
-
-          {/* -------------------------------------------------
-              OTHER
-          ------------------------------------------------- */}
-
-          <button
-            type="button"
-            onClick={() => toggleType(3)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
-              (filters.types || []).includes(3)
-                ? 'bg-cyan-950/40 border-cyan-500/50 text-cyan-300 shadow-sm shadow-cyan-900/30'
-                : 'bg-slate-900/40 border-slate-800/60 text-slate-400 hover:border-slate-700'
-            }`}
-          >
-
-            <div className="flex items-center space-x-2.5">
-
-              <span className="w-3 h-3 rounded-full bg-cyan-500 shadow-sm shadow-cyan-400"></span>
-
-              <Compass className="w-4 h-4 text-cyan-400" />
-
-              <span>
-                Other / Offshore Source
-              </span>
-
-            </div>
-
-            <input
-              type="checkbox"
-              checked={(filters.types || []).includes(3)}
-              onChange={() => {}}
-              className="rounded accent-cyan-500"
-            />
-
-          </button>
-
+        <div className="text-2xl font-black text-amber-400 mt-1">
+          {isLoading ? (
+            <span className="animate-pulse text-sm">
+              Connecting...
+            </span>
+          ) : (
+            totalCount.toLocaleString()
+          )}
         </div>
 
+        {!isLoading && (
+          <div className="mt-1 text-[10px] text-slate-400">
+            Showing{' '}
+            <span className="text-slate-200 font-semibold">
+              {currentCount.toLocaleString()}
+            </span>{' '}
+            of{' '}
+            <span className="text-slate-200 font-semibold">
+              {totalCount.toLocaleString()}
+            </span>{' '}
+            detections
+          </div>
+        )}
       </div>
 
-
       {/* =====================================================
-          MONTH FILTER
+          LIVE STREAM PARAMETERS (Satellite & Time Horizon)
       ===================================================== */}
-
-      <div className="space-y-2">
-
-        <label className="text-xs font-semibold text-slate-300 tracking-wide uppercase flex items-center space-x-1.5">
-
-          <Calendar className="w-3.5 h-3.5 text-amber-400" />
-
-          <span>
-            Observation Month
-          </span>
-
-        </label>
-
-
-        <select
-          value={filters.month || 0}
-          onChange={(e) =>
-            setFilters(prev => ({
-              ...prev,
-              month: parseInt(e.target.value)
-            }))
-          }
-          className="w-full bg-slate-900 border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50 transition-colors"
-        >
-
-          {MONTH_NAMES.map((name, idx) => (
-
-            <option
-              key={idx}
-              value={idx}
+      {streamMode === 'live' && (
+        <div className="p-3.5 rounded-xl bg-rose-950/20 border border-rose-500/30 space-y-3">
+          <div>
+            <label className="block text-[11px] font-bold text-rose-300 uppercase tracking-wider mb-1.5">
+              Satellite Instrument
+            </label>
+            <select
+              value={filters.source || 'VIIRS_NOAA20_NRT'}
+              onChange={(e) => setFilters(prev => ({ ...prev, source: e.target.value }))}
+              className="w-full bg-slate-900 border border-rose-500/30 text-slate-200 text-xs rounded-xl px-2.5 py-2 focus:outline-none focus:border-rose-400 font-mono"
             >
-              {name}
-            </option>
+              <option value="VIIRS_NOAA20_NRT">VIIRS NOAA-20 (NRT)</option>
+              <option value="VIIRS_SNPP_NRT">VIIRS Suomi-NPP (NRT)</option>
+              <option value="VIIRS_NOAA21_NRT">VIIRS NOAA-21 (NRT)</option>
+              <option value="MODIS_NRT">MODIS Terra & Aqua (NRT)</option>
+            </select>
+          </div>
 
-          ))}
+          <div>
+            <label className="block text-[11px] font-bold text-rose-300 uppercase tracking-wider mb-1.5">
+              Time Horizon
+            </label>
+            <div className="grid grid-cols-4 gap-1 p-1 bg-slate-900 rounded-xl border border-slate-800">
+              {[
+                { label: '24h', val: 1 },
+                { label: '48h', val: 2 },
+                { label: '3d', val: 3 },
+                { label: '7d', val: 7 }
+              ].map(item => (
+                <button
+                  key={item.val}
+                  type="button"
+                  onClick={() => setFilters(prev => ({ ...prev, day_range: item.val }))}
+                  className={`py-1 rounded-lg text-xs font-semibold transition-all ${
+                    (filters.day_range || 1) === item.val
+                      ? 'bg-rose-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
-        </select>
+      {/* =====================================================
+          HISTORICAL ARCHIVE PARAMETERS (Year & Month)
+      ===================================================== */}
+      {streamMode === 'archive' && (
+        <div className="space-y-3">
+          {/* YEAR SELECTOR */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-300 tracking-wide uppercase flex items-center space-x-1.5">
+              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+              <span>Observation Year</span>
+            </label>
+            <select
+              value={filters.year || 0}
+              onChange={(e) => setFilters(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+              className="w-full bg-slate-900 border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50 transition-colors"
+            >
+              <option value={0}>All Available Years</option>
+              <option value={2024}>2024 (Primary Trained Set)</option>
+              <option value={2023}>2023 (Archive Feed)</option>
+              <option value={2022}>2022 (Archive Feed)</option>
+              <option value={2021}>2021 (Archive Feed)</option>
+            </select>
+          </div>
 
-      </div>
+          {/* MONTH SELECTOR */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-300 tracking-wide uppercase flex items-center space-x-1.5">
+              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+              <span>Observation Month</span>
+            </label>
+            <select
+              value={filters.month || 0}
+              onChange={(e) =>
+                setFilters(prev => ({
+                  ...prev,
+                  month: parseInt(e.target.value)
+                }))
+              }
+              className="w-full bg-slate-900 border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50 transition-colors"
+            >
+              {MONTH_NAMES.map((name, idx) => (
+                <option key={idx} value={idx}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
 
       {/* =====================================================

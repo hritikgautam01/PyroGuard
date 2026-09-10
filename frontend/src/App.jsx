@@ -44,10 +44,14 @@ const DEFAULT_FILTERS = {
 export default function App() {
 
   /* -------------------------------------------------------
-     ACTIVE TAB
+     ACTIVE TAB & STREAM MODE
   ------------------------------------------------------- */
 
   const [activeTab, setActiveTab] = useState('map');
+  const [streamMode, setStreamMode] = useState('archive');
+  const [firmsMapKey, setFirmsMapKey] = useState(() => {
+    return localStorage.getItem('FIRMS_MAP_KEY') || '';
+  });
 
 
   /* -------------------------------------------------------
@@ -126,11 +130,6 @@ export default function App() {
 
       const data = await fetchStats();
 
-      console.log(
-        'Dataset statistics:',
-        data
-      );
-
       setStats(data);
 
     } catch (err) {
@@ -161,110 +160,43 @@ export default function App() {
 
       const params = {
         limit: filters.limit || 2000,
-        offset: 0
+        offset: 0,
+        stream_mode: streamMode,
+        source: filters.source || 'VIIRS_NOAA20_NRT',
+        day_range: filters.day_range || 1,
+        firms_map_key: firmsMapKey
       };
 
-
-      /* ---------------------------------------------------
-         TYPE FILTER
-      --------------------------------------------------- */
-
-      /*
-       * IMPORTANT:
-       *
-       * If types is [] we still send:
-       *
-       *     type: ''
-       *
-       * This allows the backend to distinguish between
-       * "no types selected" and "no type filter".
-       *
-       * The backend data_loader.py handles [] correctly.
-       */
-
       if (filters.types !== undefined) {
-
         params.type = filters.types.join(',');
-
       }
 
-
-      /* ---------------------------------------------------
-         MONTH FILTER
-      --------------------------------------------------- */
-
-      if (
-        filters.month &&
-        filters.month > 0
-      ) {
-
+      if (filters.month && filters.month > 0) {
         params.month = filters.month;
-
       }
 
-
-      /* ---------------------------------------------------
-         DAY / NIGHT FILTER
-      --------------------------------------------------- */
+      if (filters.year && filters.year > 0) {
+        params.year = filters.year;
+      }
 
       if (filters.daynight) {
-
         params.daynight = filters.daynight;
-
       }
 
-
-      /* ---------------------------------------------------
-         CONFIDENCE FILTER
-      --------------------------------------------------- */
-
-      if (
-        filters.min_confidence !== undefined &&
-        filters.min_confidence > 0
-      ) {
-
-        params.min_confidence =
-          filters.min_confidence;
-
+      if (filters.min_confidence !== undefined && filters.min_confidence > 0) {
+        params.min_confidence = filters.min_confidence;
       }
 
+      console.log('Loading detections with params:', params);
 
-      /* ---------------------------------------------------
-         DEBUG
-      --------------------------------------------------- */
+      const res = await fetchDetections(params);
 
-      console.log(
-        'Loading detections with filters:',
-        params
-      );
+      if (res.error) {
+        console.warn('Backend warning:', res.error);
+      }
 
-
-      /* ---------------------------------------------------
-         API REQUEST
-      --------------------------------------------------- */
-
-      const res =
-        await fetchDetections(params);
-
-
-      console.log(
-  'Detection response:',
-  JSON.stringify(res, null, 2)
-);
-
-      /* ---------------------------------------------------
-         UPDATE MAP DATA
-      --------------------------------------------------- */
-
-      setDetections(
-        res.results || []
-      );
-
-
-      setTotalCount(
-        res.total || 0
-      );
-
+      setDetections(res.results || []);
+      setTotalCount(res.total || 0);
 
     } catch (err) {
 
@@ -274,7 +206,6 @@ export default function App() {
       );
 
       setDetections([]);
-
       setTotalCount(0);
 
     } finally {
@@ -283,7 +214,7 @@ export default function App() {
 
     }
 
-  }, [filters]);
+  }, [filters, streamMode, firmsMapKey]);
 
 
   /* =======================================================
@@ -449,15 +380,14 @@ export default function App() {
       ================================================= */}
 
       <Header
-
         activeTab={activeTab}
-
         setActiveTab={setActiveTab}
-
         healthStatus={healthStatus}
-
         checkBackendHealth={checkBackendHealth}
-
+        streamMode={streamMode}
+        setStreamMode={setStreamMode}
+        firmsMapKey={firmsMapKey}
+        setFirmsMapKey={setFirmsMapKey}
       />
 
 
@@ -548,19 +478,13 @@ export default function App() {
 
 
               <Sidebar
-
                 filters={filters}
-
                 setFilters={setFilters}
-
                 onReset={handleResetFilters}
-
                 totalCount={totalCount}
-
                 currentCount={detections.length}
-
                 isLoading={isLoadingDetections}
-
+                streamMode={streamMode}
               />
 
 

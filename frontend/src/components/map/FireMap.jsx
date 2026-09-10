@@ -255,7 +255,7 @@ export default function FireMap({
 
               {/* HEADER */}
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-1">
 
                 <span
                   className={`
@@ -270,11 +270,36 @@ export default function FireMap({
                   {det.type_name}
                 </span>
 
-                <span className="text-[10px] text-slate-400 font-mono">
-                  Type {det.type}
-                </span>
+                <div className="flex items-center space-x-1">
+                  {det.stream_mode === 'live' ? (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center space-x-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
+                      <span>LIVE</span>
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      Type {det.type}
+                    </span>
+                  )}
+                </div>
 
               </div>
+
+              {/* SATELLITE & ML CONFIDENCE INFO */}
+              {(det.satellite || det.ml_confidence) && (
+                <div className="flex items-center justify-between text-[10px] text-slate-400 bg-slate-900/60 px-2 py-1 rounded-lg border border-slate-800 font-mono">
+                  {det.satellite && (
+                    <span className="text-amber-300 font-semibold">
+                      {det.satellite}
+                    </span>
+                  )}
+                  {det.ml_confidence && (
+                    <span className="text-emerald-400 font-semibold">
+                      AI Conf: {Math.round(det.ml_confidence * 100)}%
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* FRP + TEMPERATURE */}
 

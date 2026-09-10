@@ -2,6 +2,8 @@ import os
 import pandas as pd
 from typing import List, Dict, Optional, Any
 
+from services import firms_live
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH = os.path.join(BASE_DIR, "data", "firms_india_2024_features.csv")
 
@@ -28,10 +30,13 @@ def load_dataset() -> pd.DataFrame:
     if "type" in df.columns:
         df["type"] = df["type"].fillna(0).astype(int)
 
-    if "month" in df.columns:
+    if "acq_date" in df.columns:
+        dt_series = pd.to_datetime(df["acq_date"], errors="coerce")
+        df["month"] = dt_series.dt.month.fillna(1).astype(int)
+        df["year"] = dt_series.dt.year.fillna(2024).astype(int)
+    elif "month" in df.columns:
         df["month"] = df["month"].fillna(1).astype(int)
-    elif "acq_date" in df.columns:
-        df["month"] = pd.to_datetime(df["acq_date"], errors="coerce").dt.month.fillna(1).astype(int)
+        df["year"] = 2024
 
     if "confidence_numeric" in df.columns:
         df["confidence_numeric"] = pd.to_numeric(df["confidence_numeric"], errors="coerce").fillna(0.7)
@@ -45,37 +50,70 @@ def load_dataset() -> pd.DataFrame:
 def get_detections(
     types: Optional[List[int]] = None,
     month: Optional[int] = None,
+    year: Optional[int] = None,
     min_confidence: Optional[float] = None,
     daynight: Optional[str] = None,
     limit: int = 2000,
-    offset: int = 0
+    offset: int = 0,
+    stream_mode: str = "archive",
+    source: str = "VIIRS_NOAA20_NRT",
+    day_range: int = 1,
+    firms_map_key: str = ""
 ) -> Dict[str, Any]:
 
-    df = load_dataset()
+    if stream_mode == "live":
+        # Fetch live data from NASA FIRMS API and classify using XGBoost model
+        try:
+            df = firms_live.fetch_firms_live_data(
+                map_key=firms_map_key,
+                source=source,
+                day_range=day_range
+            )
+        except ValueError as ve:
+            return {
+                "total": 0,
+                "count": 0,
+                "results": [],
+                "error": str(ve)
+            }
+        except Exception as e:
+            return {
+                "total": 0,
+                "count": 0,
+                "results": [],
+                "error": f"Live FIRMS fetch failed: {str(e)}"
+            }
+    else:
+        # Archive dataset mode
+        df = load_dataset()
 
     # Start with the complete dataset
     filtered = df
 
     # =========================================================
+    # YEAR FILTER (Archive mode)
+    # =========================================================
+    if year is not None and year > 0 and stream_mode != "live":
+        if "year" in filtered.columns:
+            year_mask = filtered["year"] == year
+            # If requested year exists in dataset, filter by it.
+            # If dataset only has 2024 and user selected a different year, return empty or filtered.
+            if year_mask.any():
+                filtered = filtered[year_mask]
+            elif "acq_date" in filtered.columns:
+                dt_years = pd.to_datetime(filtered["acq_date"], errors="coerce").dt.year
+                if (dt_years == year).any():
+                    filtered = filtered[dt_years == year]
+
+    # =========================================================
     # TYPE FILTER
     # =========================================================
-    #
-    # Important:
-    #   types = None  -> no type filter
-    #   types = []    -> explicitly selected NO types
-    #   types = [0,2] -> show only type 0 and type 2
-    #
     if types is not None:
-
         if len(types) == 0:
-            # No fire-source classes selected.
-            # Therefore return ZERO detections.
             filtered = filtered.iloc[0:0]
-
         else:
-            filtered = filtered[
-                filtered["type"].isin(types)
-            ]
+            if "type" in filtered.columns:
+                filtered = filtered[filtered["type"].isin(types)]
 
     # =========================================================
     # MONTH FILTER

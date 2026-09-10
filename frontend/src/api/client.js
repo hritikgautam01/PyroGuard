@@ -56,4 +56,11 @@ export const predictThermalSource = async (features) => {
   return response.data;
 };
 
+export const validateFirmsApiKey = async (map_key) => {
+  const response = await client.get('/firms/validate', {
+    params: { map_key }
+  });
+  return response.data;
+};
+
 export default client;

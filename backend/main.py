@@ -11,7 +11,7 @@ from schemas import (
     StatsResponse
 )
 
-from services import predictor, data_loader, infrastructure
+from services import predictor, data_loader, infrastructure, firms_live
 
 
 app = FastAPI(
@@ -108,6 +108,11 @@ def get_detections_endpoint(
         description="Filter by month (1-12)"
     ),
 
+    year: Optional[int] = Query(
+        None,
+        description="Filter by year e.g. 2024, 2023"
+    ),
+
     min_confidence: Optional[float] = Query(
         None,
         ge=0.0,
@@ -131,6 +136,28 @@ def get_detections_endpoint(
         0,
         ge=0,
         description="Pagination offset"
+    ),
+
+    stream_mode: str = Query(
+        "archive",
+        description="Data stream mode: 'archive' or 'live'"
+    ),
+
+    source: str = Query(
+        "VIIRS_NOAA20_NRT",
+        description="FIRMS Satellite source e.g. VIIRS_NOAA20_NRT, VIIRS_SNPP_NRT, MODIS_NRT"
+    ),
+
+    day_range: int = Query(
+        1,
+        ge=1,
+        le=10,
+        description="Time window in days for live FIRMS data"
+    ),
+
+    firms_map_key: str = Query(
+        "",
+        description="NASA FIRMS MAP KEY"
     )
 ):
 
@@ -174,14 +201,38 @@ def get_detections_endpoint(
 
         month=month,
 
+        year=year,
+
         min_confidence=min_confidence,
 
         daynight=daynight,
 
         limit=limit,
 
-        offset=offset
+        offset=offset,
+
+        stream_mode=stream_mode,
+
+        source=source,
+
+        day_range=day_range,
+
+        firms_map_key=firms_map_key
     )
+
+
+# =========================================================
+# NASA FIRMS MAP KEY VALIDATION
+# =========================================================
+
+@app.get(
+    "/firms/validate",
+    summary="Validate NASA FIRMS MAP KEY"
+)
+def validate_firms_key_endpoint(
+    map_key: str = Query(..., description="NASA FIRMS MAP KEY to validate")
+):
+    return firms_live.validate_firms_key(map_key)
 
 
 # =========================================================

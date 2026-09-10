@@ -57,11 +57,18 @@ class DetectionItem(BaseModel):
 
     # Detection history
     detection_count: int
+
+    # Live Stream & Metadata Extensions
+    satellite: Optional[str] = None
+    stream_mode: Optional[str] = None
+    year: Optional[int] = None
+    ml_confidence: Optional[float] = None
     
 class DetectionsResponse(BaseModel):
     total: int
     count: int
     results: List[DetectionItem]
+    error: Optional[str] = None
 
 class StatsResponse(BaseModel):
     total_detections: int
