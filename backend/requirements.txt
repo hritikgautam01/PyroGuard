@@ -6,3 +6,5 @@ xgboost
 joblib
 python-multipart
 requests
+python-dotenv
+

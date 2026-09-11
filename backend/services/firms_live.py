@@ -10,8 +10,8 @@ from typing import List, Dict, Any, Optional
 
 from services import predictor
 
-# Default NASA FIRMS MAP KEY (can be set via env var FIRMS_MAP_KEY)
-DEFAULT_MAP_KEY = os.getenv("FIRMS_MAP_KEY", "bf6fe16d62edc12939c7193b0b0cdd58")
+# Default NASA FIRMS MAP KEY (read strictly from environment variable FIRMS_MAP_KEY)
+DEFAULT_MAP_KEY = os.getenv("FIRMS_MAP_KEY", "")
 
 # In-memory cache for live FIRMS data to prevent hitting rate limits
 # Key format: f"{map_key}_{source}_{day_range}_{year}_{date_str}"
